@@ -1,8 +1,6 @@
-
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request
 from openai import OpenAI
 import os
-from io import BytesIO
 from dotenv import load_dotenv
 from datetime import datetime
 import json
@@ -73,6 +71,10 @@ def log_interaction(action, prompt, response):
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
+    logic = ""
+    inputs = ""
+    original = ""
+    action = ""
 
     if request.method == "POST":
         action = request.form["action"]
@@ -102,13 +104,7 @@ def index():
         # Log the interaction
         log_interaction(action, prompt, result)
 
-        # Send result as downloadable file
-        session_file = BytesIO()
-        session_file.write(result.encode())
-        session_file.seek(0)
-        return send_file(session_file, as_attachment=True, download_name="fast_formula.ff", mimetype="text/plain")
-
-    return render_template("index.html", result=result)
+    return render_template("index.html", result=result, logic=logic, inputs=inputs, original=original, action=action)
 
 if __name__ == "__main__":
     app.run(debug=True)
