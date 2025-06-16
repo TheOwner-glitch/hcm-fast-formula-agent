@@ -1,0 +1,124 @@
+
+<!doctype html>
+<html>
+<head>
+  <title>Fast Formula AI Agent</title>
+  <style>
+    .preset-btn {
+      margin-left: 10px;
+      font-size: 0.8em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Oracle HCM Fast Formula Agent</h1>
+
+  <form method="POST" enctype="multipart/form-data">
+    <label for="action"><strong>Select Action:</strong></label><br>
+    <select name="action" id="action">
+      <option value="generate">🆕 Generate – Create a new Fast Formula from scratch</option>
+      <option value="modify">✏️ Modify – Change an existing Fast Formula based on a request</option>
+      <option value="explain">🔍 Explain – Analyze and describe what a Fast Formula does</option>
+      <option value="validate">⚠️ Validate – Check for errors and logic issues in a formula</option>
+    </select>
+    <br><br>
+
+    <label for="model"><strong>Select Model:</strong></label><br>
+    <select name="model" id="model">
+      <option value="gpt-4">🧠 GPT-4 (default)</option>
+      <option value="gpt-4o">⚡ GPT-4o (faster, cheaper)</option>
+      <option value="gpt-3.5-turbo">🚀 GPT-3.5 Turbo (fastest & lowest cost)</option>
+    </select>
+    <br><br>
+
+    <label>Formula Logic / Change Request:</label>
+    <button type="button" class="preset-btn" onclick="loadPreset('generate')">Load Sample</button><br>
+    <textarea name="logic" id="logic" rows="4" cols="80"></textarea><br><br>
+
+    <label>Inputs (comma-separated):</label><br>
+    <input type="text" name="inputs" id="inputs"/><br><br>
+
+    <label>📄 Upload Fast Formula (.ff or .txt):</label><br>
+    <input type="file" id="ffUpload" accept=".ff,.txt,text/plain"><br><br>
+
+    <label>Paste Existing Formula (if modifying, explaining, or validating):</label>
+    <button type="button" class="preset-btn" onclick="loadPreset('modify')">Modify Sample</button>
+    <button type="button" class="preset-btn" onclick="loadPreset('explain')">Explain Sample</button>
+    <button type="button" class="preset-btn" onclick="loadPreset('validate')">Validate Sample</button><br>
+    <textarea name="original" id="original" rows="10" cols="80"></textarea><br><br>
+
+    <button type="submit">Submit</button>
+    <button type="button" onclick="resetForm()">Reset</button>
+  </form>
+
+  <hr>
+
+  <p><strong>Action Legend:</strong></p>
+  <ul>
+    <li><strong>Generate</strong>: Provide business rules and inputs → Get a new formula.</li>
+    <li><strong>Modify</strong>: Paste a formula + describe what to change.</li>
+    <li><strong>Explain</strong>: Paste a formula → Get plain-English explanation.</li>
+    <li><strong>Validate</strong>: Paste a formula → Get QA feedback + fixes.</li>
+  </ul>
+
+  <script>
+    function loadPreset(action) {
+      const logic = document.getElementById("logic");
+      const inputs = document.getElementById("inputs");
+      const original = document.getElementById("original");
+
+      if (action === "generate") {
+        logic.value = `You are an expert in Oracle Cloud HCM Fast Formulas.
+
+Generate a Fast Formula for the Payroll module with the following requirements:
+
+1. If an employee’s salary is above $120,000, deduct a 3% high-income tax.
+2. If the salary is between $80,000 and $120,000, deduct 2% mid-income tax.
+3. If the salary is below $80,000, deduct 1% low-income tax.
+4. Additionally, if the employee is in the state of California (CA), apply an extra $50 state fee.
+5. If the employee’s job grade is “MGR” or higher, add a $500 executive bonus.
+6. Return the final net pay as:  
+   Net Pay = Salary - Taxes - State Fee + Executive Bonus
+
+Include default values for each input.
+Make sure the formula returns NET_PAY.
+Include inline comments for clarity.`;
+        inputs.value = "SALARY (120000), STATE (GA), GRADE (MGR)";
+        original.value = "";
+      } else if (action === "modify") {
+        logic.value = "Change the bonus logic to give an extra 5% to Grade A employees.";
+        original.value = "/* Existing bonus formula goes here */";
+      } else if (action === "explain") {
+        original.value = `/* Formula: VACATION_ACCRUAL_COMPLEX_TEST */\n\nDEFAULT FOR PER_ASG_REL_DATE_START IS '1951/01/01 00:00:00' (DATE)\nDEFAULT FOR PER_ASG_NORMAL_HOURS IS 40\n\nINPUTS ARE\n  IV_HIRE_DATE (DATE),\n  IV_EFFECTIVE_DATE (DATE),\n  IV_CEILING (NUMBER),\n  IV_METHOD (TEXT)\n\n-- Compute Years of Service\nyearsOfService = FLOOR(MONTHS_BETWEEN(IV_EFFECTIVE_DATE, IV_HIRE_DATE) / 12)\n\n-- Set base accrual based on years of service\nIF yearsOfService < 1 THEN\n  baseAccrual = 0\nELSE IF yearsOfService >= 1 AND yearsOfService < 5 THEN\n  baseAccrual = 10\nELSE IF yearsOfService >= 5 AND yearsOfService < 10 THEN\n  baseAccrual = 15\nELSE\n  baseAccrual = 20\n\n-- Adjust for part-time hours\nworkingHours = PER_ASG_NORMAL_HOURS\nstandardHours = 40\nadjustedAccrual = baseAccrual * (workingHours / standardHours)\n\n-- Enforce ceiling\nIF IV_CEILING > 0 AND adjustedAccrual > IV_CEILING THEN\n  finalAccrual = IV_CEILING\nELSE\n  finalAccrual = adjustedAccrual\n\n-- Optional method override\nIF IV_METHOD = 'MANUAL' THEN\n  finalAccrual = 0\n\n-- Output\nRETURN finalAccrual`;
+        logic.value = "";
+        inputs.value = "";
+      } else if (action === "validate") {
+        original.value = `/* Formula: VACATION_ACCRUAL_COMPLEX_TEST */\n\nDEFAULT FOR PER_ASG_REL_DATE_START IS '1951/01/01 00:00:00' (DATE)\nDEFAULT FOR PER_ASG_NORMAL_HOURS IS 40\n\nINPUTS ARE\n  IV_HIRE_DATE (DATE),\n  IV_EFFECTIVE_DATE (DATE),\n  IV_CEILING (NUMBER),\n  IV_METHOD (TEXT)\n\n-- Compute Years of Service\nyearsOfService = FLOOR(MONTHS_BETWEEN(IV_EFFECTIVE_DATE, IV_HIRE_DATE) / 12)\n\n-- Set base accrual based on years of service\nIF yearsOfService < 1 THEN\n  baseAccrual = 0\nELSE IF yearsOfService >= 1 AND yearsOfService < 5 THEN\n  baseAccrual = 10\nELSE IF yearsOfService >= 5 AND yearsOfService < 10 THEN\n  baseAccrual = 15\nELSE\n  baseAccrual = 20\n\n-- Adjust for part-time hours\nworkingHours = PER_ASG_NORMAL_HOURS\nstandardHours = 40\nadjustedAccrual = baseAccrual * (workingHours / standardHours)\n\n-- Enforce ceiling\nIF IV_CEILING > 0 AND adjustedAccrual > IV_CEILING THEN\n  finalAccrual = IV_CEILING\nELSE\n  finalAccrual = adjustedAccrual\n\n-- Optional method override\nIF IV_METHOD = 'MANUAL' THEN\n  finalAccrual = 0\n\n-- Output\nRETURN finalAccrual`;
+        logic.value = "";
+        inputs.value = "";
+      }
+    }
+
+    document.getElementById("ffUpload").addEventListener("change", function () {
+      const file = this.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        document.getElementById("original").value = e.target.result;
+      };
+      reader.readAsText(file);
+    });
+  
+    function resetForm() {
+      document.getElementById("logic").value = "";
+      document.getElementById("inputs").value = "";
+      document.getElementById("original").value = "";
+      document.getElementById("ffUpload").value = "";
+      document.getElementById("action").selectedIndex = 0;
+      document.getElementById("model").selectedIndex = 0;
+    }
+    </script>
+    
+</body>
+</html>
