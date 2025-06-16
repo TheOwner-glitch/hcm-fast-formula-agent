@@ -17,6 +17,26 @@
     .btn-group {
       margin-top: 10px;
     }
+    .history-container {
+      margin-top: 50px;
+      padding: 10px;
+      border-top: 2px solid #ccc;
+    }
+    .history-entry {
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .history-entry summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .history-entry pre {
+      white-space: pre-wrap;
+      background: #f4f4f4;
+      padding: 8px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -77,6 +97,8 @@
     <li><strong>Explain</strong>: Paste a formula → Get plain-English explanation.</li>
     <li><strong>Validate</strong>: Paste a formula → Get QA feedback + fixes.</li>
   </ul>
+
+  <div id="historySection" class="history-container"></div>
 
   <script>
     function loadPreset(action) {
@@ -191,6 +213,33 @@ RETURN finalAccrual`;
       a.click();
       URL.revokeObjectURL(url);
     }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch("/static/history.jsonl");
+        if (!res.ok) return;
+        const text = await res.text();
+        const lines = text.trim().split("\n").slice(-10);
+        const history = lines.map(line => JSON.parse(line));
+
+        const container = document.getElementById("historySection");
+        container.innerHTML = "<h3>🕓 Recent Interactions</h3>" +
+          history.map(entry => `
+            <div class="history-entry">
+              <summary>${new Date(entry.timestamp).toLocaleString()} — <em>${entry.action}</em></summary>
+              <details>
+                <summary>Prompt & Response</summary>
+                <pre><strong>Prompt:</strong>\n${entry.prompt}</pre>
+                <pre><strong>Response:</strong>\n${entry.response}</pre>
+              </details>
+            </div>
+          `).join("");
+      } catch (err) {
+        console.error("Error loading history:", err);
+      }
+    }
+
+    window.addEventListener("load", loadHistory);
   </script>
 </body>
 </html>

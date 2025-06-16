@@ -57,10 +57,14 @@ def log_interaction(action, prompt, response):
         "response": response
     }
 
-    log_path = os.path.join(os.getcwd(), "history.jsonl")
+    # Ensure logging path is inside the static folder regardless of working directory
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    os.makedirs(static_dir, exist_ok=True)
+
+    log_path = os.path.join(static_dir, "history.jsonl")
     if os.path.exists(log_path):
         with open(log_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()[-9:]  # keep last 9 to make room for new
+            lines = f.readlines()[-9:]  # keep last 9 entries to make room for new
     else:
         lines = []
 
