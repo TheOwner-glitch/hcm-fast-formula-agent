@@ -77,6 +77,7 @@
     <textarea name="original" id="original" rows="10" cols="80">{{ original or '' }}</textarea><br><br>
 
     <button type="submit">Submit</button>
+    <span id="loadingSpinner" style="display:none; margin-left:10px;">⏳ Working...</span>
     <button type="button" onclick="resetForm()">Reset</button>
   </form>
 
@@ -186,6 +187,11 @@ RETURN finalAccrual`;
       reader.readAsText(file);
     });
 
+    const form = document.querySelector("form");
+    form.addEventListener("submit", function () {
+      document.getElementById("loadingSpinner").style.display = "inline-block";
+    });
+
     function resetForm() {
       document.getElementById("logic").value = "";
       document.getElementById("inputs").value = "";
@@ -193,6 +199,8 @@ RETURN finalAccrual`;
       document.getElementById("ffUpload").value = "";
       document.getElementById("action").selectedIndex = 0;
       document.getElementById("model").selectedIndex = 0;
+      document.getElementById("result").innerText = "";
+      document.getElementById("loadingSpinner").style.display = "none";
     }
 
     function copyResult() {
