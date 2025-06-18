@@ -1,12 +1,65 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Fast Formula AI Agent</title>
   <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.4s, color 0.4s;
+      padding: 20px;
+    }
+
+    body.light-mode {
+      background-color: #ffffff;
+      color: #000000;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+	
+	body.dark-mode .result-container,
+	body.dark-mode .history-entry pre {
+	background-color: #2a2a2a;
+	color: #f0f0f0;
+	border-color: #555;
+	}
+
+    .mode-toggle {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #007bff;
+      color: white;
+      transition: background 0.3s;
+    }
+
+    .mode-toggle:hover {
+      background: #0056b3;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.2em;
+      font-weight: 700;
+      background: linear-gradient(90deg, #0057b7, #00aaff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 30px;
+    }
+
     .preset-btn {
       margin-left: 10px;
       font-size: 0.8em;
     }
+
     .result-container {
       margin-top: 30px;
       padding: 10px;
@@ -14,32 +67,45 @@
       background-color: #f9f9f9;
       white-space: pre-wrap;
     }
+
     .btn-group {
       margin-top: 10px;
     }
+
     .history-container {
-      margin-top: 50px;
+      margin-top: 20px;
       padding: 10px;
       border-top: 2px solid #ccc;
     }
+
     .history-entry {
       margin-bottom: 15px;
       border-bottom: 1px solid #ddd;
       padding-bottom: 10px;
     }
+
     .history-entry summary {
       cursor: pointer;
       font-weight: bold;
     }
+
     .history-entry pre {
       white-space: pre-wrap;
       background: #f4f4f4;
       padding: 8px;
       border-radius: 4px;
     }
+
+    .editor {
+      height: 200px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+    }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
 </head>
 <body>
+  <button class="mode-toggle" onclick="toggleMode()">Toggle Theme</button>
   <h1>Oracle HCM Fast Formula Agent</h1>
 
   <form method="POST" enctype="multipart/form-data">
@@ -62,7 +128,8 @@
 
     <label>Formula Logic / Change Request:</label>
     <button type="button" class="preset-btn" onclick="loadPreset('generate')">Load Sample</button><br>
-    <textarea name="logic" id="logic" rows="4" cols="80">{{ logic or '' }}</textarea><br><br>
+    <div id="logicEditor" class="editor"></div>
+    <textarea name="logic" id="logic" style="display:none;">{{ logic or '' }}</textarea><br><br>
 
     <label>Inputs (comma-separated):</label><br>
     <input type="text" name="inputs" id="inputs" value="{{ inputs or '' }}"/><br><br>
@@ -74,7 +141,8 @@
     <button type="button" class="preset-btn" onclick="loadPreset('modify')">Modify Sample</button>
     <button type="button" class="preset-btn" onclick="loadPreset('explain')">Explain Sample</button>
     <button type="button" class="preset-btn" onclick="loadPreset('validate')">Validate Sample</button><br>
-    <textarea name="original" id="original" rows="10" cols="80">{{ original or '' }}</textarea><br><br>
+    <div id="originalEditor" class="editor"></div>
+    <textarea name="original" id="original" style="display:none;">{{ original or '' }}</textarea><br><br>
 
     <button type="submit">Submit</button>
     <span id="loadingSpinner" style="display:none; margin-left:10px;">⏳ Working...</span>
@@ -99,16 +167,29 @@
     <li><strong>Validate</strong>: Paste a formula → Get QA feedback + fixes.</li>
   </ul>
 
-  <div id="historySection" class="history-container"></div>
+  <details>
+    <summary><strong>🕓 Recent Interactions (click to expand/collapse)</strong></summary>
+    <div id="historySection" class="history-container"></div>
+  </details>
 
   <script>
+    const logicEditor = ace.edit("logicEditor");
+    logicEditor.setTheme("ace/theme/textmate");
+    logicEditor.session.setMode("ace/mode/sql");
+    logicEditor.setOptions({fontSize: '12pt', showPrintMargin: false});
+
+    const originalEditor = ace.edit("originalEditor");
+    originalEditor.setTheme("ace/theme/textmate");
+    originalEditor.session.setMode("ace/mode/sql");
+    originalEditor.setOptions({fontSize: '12pt', showPrintMargin: false});
+
     function loadPreset(action) {
       const logic = document.getElementById("logic");
       const inputs = document.getElementById("inputs");
       const original = document.getElementById("original");
 
       if (action === "generate") {
-        logic.value = `You are an expert in Oracle Cloud HCM Fast Formulas.
+        logicEditor.setValue(`You are an expert in Oracle Cloud HCM Fast Formulas.
 
 Generate a Fast Formula for the Payroll module with the following requirements:
 
@@ -122,12 +203,12 @@ Generate a Fast Formula for the Payroll module with the following requirements:
 
 Include default values for each input.
 Make sure the formula returns NET_PAY.
-Include inline comments for clarity.`;
+Include inline comments for clarity.`, -1);
         inputs.value = "SALARY (120000), STATE (GA), GRADE (MGR)";
-        original.value = "";
+        originalEditor.setValue("", -1);
       } else if (action === "modify") {
-        logic.value = "Change the bonus logic to give an extra 5% to Grade A employees.";
-        original.value = "/* Existing bonus formula goes here */";
+        logicEditor.setValue("Change the bonus logic to give an extra 5% to Grade A employees.", -1);
+        originalEditor.setValue("/* Existing bonus formula goes here */", -1);
       } else if (action === "explain" || action === "validate") {
         const sampleFormula = `/* Formula: VACATION_ACCRUAL_COMPLEX_TEST */
 
@@ -170,8 +251,8 @@ IF IV_METHOD = 'MANUAL' THEN
 
 -- Output
 RETURN finalAccrual`;
-        original.value = sampleFormula;
-        logic.value = "";
+        originalEditor.setValue(sampleFormula, -1);
+        logicEditor.setValue("", -1);
         inputs.value = "";
       }
     }
@@ -179,10 +260,9 @@ RETURN finalAccrual`;
     document.getElementById("ffUpload").addEventListener("change", function () {
       const file = this.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = function (e) {
-        document.getElementById("original").value = e.target.result;
+        originalEditor.setValue(e.target.result, -1);
       };
       reader.readAsText(file);
     });
@@ -190,12 +270,14 @@ RETURN finalAccrual`;
     const form = document.querySelector("form");
     form.addEventListener("submit", function () {
       document.getElementById("loadingSpinner").style.display = "inline-block";
+      document.getElementById("logic").value = logicEditor.getValue();
+      document.getElementById("original").value = originalEditor.getValue();
     });
 
     function resetForm() {
-      document.getElementById("logic").value = "";
+      logicEditor.setValue("", -1);
       document.getElementById("inputs").value = "";
-      document.getElementById("original").value = "";
+      originalEditor.setValue("", -1);
       document.getElementById("ffUpload").value = "";
       document.getElementById("action").selectedIndex = 0;
       document.getElementById("model").selectedIndex = 0;
@@ -214,7 +296,6 @@ RETURN finalAccrual`;
       const resultText = document.getElementById("result").innerText;
       const blob = new Blob([resultText], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
       a.download = "fast_formula.ff";
@@ -229,25 +310,43 @@ RETURN finalAccrual`;
         const text = await res.text();
         const lines = text.trim().split("\n").slice(-10);
         const history = lines.map(line => JSON.parse(line));
-
         const container = document.getElementById("historySection");
-        container.innerHTML = "<h3>🕓 Recent Interactions</h3>" +
-          history.map(entry => `
-            <div class="history-entry">
-              <summary>${new Date(entry.timestamp).toLocaleString()} — <em>${entry.action}</em></summary>
-              <details>
-                <summary>Prompt & Response</summary>
-                <pre><strong>Prompt:</strong>\n${entry.prompt}</pre>
-                <pre><strong>Response:</strong>\n${entry.response}</pre>
-              </details>
-            </div>
-          `).join("");
+        container.innerHTML = history.map(entry => `
+          <div class="history-entry">
+            <summary>${new Date(entry.timestamp).toLocaleString()} — <em>${entry.action}</em></summary>
+            <details>
+              <summary>Prompt & Response</summary>
+              <pre><strong>Prompt:</strong>\n${entry.prompt}</pre>
+              <pre><strong>Response:</strong>\n${entry.response}</pre>
+            </details>
+          </div>`).join("");
       } catch (err) {
         console.error("Error loading history:", err);
       }
     }
 
-    window.addEventListener("load", loadHistory);
+    function toggleMode() {
+      const body = document.body;
+      if (body.classList.contains("dark-mode")) {
+        body.classList.remove("dark-mode");
+        body.classList.add("light-mode");
+        localStorage.setItem("theme", "light");
+      } else {
+        body.classList.remove("light-mode");
+        body.classList.add("dark-mode");
+        localStorage.setItem("theme", "dark");
+      }
+    }
+
+    function applySavedTheme() {
+      const saved = localStorage.getItem("theme") || "light";
+      document.body.classList.add(saved + "-mode");
+    }
+
+    window.addEventListener("load", () => {
+      applySavedTheme();
+      loadHistory();
+    });
   </script>
 </body>
 </html>
