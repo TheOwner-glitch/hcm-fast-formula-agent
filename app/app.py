@@ -60,6 +60,22 @@ PROMPT_TEMPLATES = {
         "Please validate the following Fast Formula:\n\n{original}\n\n"
         "Identify any syntax or logic issues, and return a corrected version if needed.\n"
         "Explain any changes you made after the corrected formula."
+    ),
+    "refine": (
+        "You are an Oracle HCM Fast Formula expert. "
+        "Refine the following formula to improve clarity and efficiency:\n\n"
+        "{original}"
+    ),
+    "add_conditions": (
+        "You are an Oracle HCM Fast Formula expert. "
+        "Add additional conditions to the following formula based on this request:\n\n"
+        "Original Formula:\n{original}\n\n"
+        "Request:\n{logic}"
+    ),
+    "simplify": (
+        "You are an Oracle HCM Fast Formula expert. "
+        "Simplify the following formula without changing its logic:\n\n"
+        "{original}"
     )
 }
 
@@ -127,7 +143,11 @@ def index():
     if request.method == "POST":
         client_ip = request.remote_addr
         user_agent = request.headers.get("User-Agent", "Unknown")
-        action = request.form["action"]
+       # Support smart refinement actions
+        action = request.form.get("smart_action") or request.form.get("action")
+        if not action or action.strip() == "":
+            return "Missing action", 400
+        action = action.strip()
         model = request.form.get("model", "gpt-4")
         logic = request.form.get("logic", "")
         inputs = request.form.get("inputs", "")
@@ -139,9 +159,14 @@ def index():
         logger.info(f"[{client_ip}] UserAgent: {user_agent}")
         logger.info(f"[{client_ip}] Request: action={action}, model={model}, user={session.get('username')}")
 
-        customized_prompt = f"Tone: {tone}\nAudience: {audience}\nStyle: {style}\n\n" + PROMPT_TEMPLATES[action].format(
-            logic=logic, inputs=inputs, original=original
-        )
+        if action in PROMPT_TEMPLATES:
+            prompt_template = PROMPT_TEMPLATES[action]
+            prompt = prompt_template.format(logic=logic, inputs=inputs, original=original)
+        else:
+            return "Invalid action", 400
+
+        customized_prompt = f"Tone: {tone}\nAudience: {audience}\nStyle: {style}\n\n{prompt}"
+
         prompt = customized_prompt
 
         try:

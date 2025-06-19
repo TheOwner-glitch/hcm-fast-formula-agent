@@ -191,6 +191,7 @@
   <h1>Oracle HCM Fast Formula Agent</h1>
 
   <form method="POST" enctype="multipart/form-data">
+  <input type="hidden" name="smart_action" id="smart_action" value="">
     <label for="action"><strong>Select Action:</strong></label><br>
     <select name="action" id="action">
       <option value="generate">🆕 Generate – Create a new Fast Formula from scratch</option>
@@ -273,6 +274,9 @@
     <div class="btn-group">
       <button onclick="copyResult()">📋 Copy to Clipboard</button>
       <button onclick="downloadResult()">💾 Download .ff</button>
+	  <button onclick="triggerSmartRefine('refine')">✨ Refine</button>
+      <button onclick="triggerSmartRefine('add_conditions')">➕ Add Conditions</button>
+      <button onclick="triggerSmartRefine('simplify')">🧹 Simplify</button>
     </div>
   {% endif %}
 
@@ -480,6 +484,24 @@ RETURN finalAccrual`;
       const saved = localStorage.getItem("theme") || "light";
       document.body.classList.add(saved + "-mode");
     }
+	
+	function triggerSmartRefine(action) {
+	  // Fill editors with latest content
+	  document.getElementById("logic").value = logicEditor.getValue();
+
+	  // Extract clean code block from the result
+	  const rawResult = document.getElementById("result").innerText;
+	  const codeMatch = rawResult.match(/```(?:[a-z]+)?\n([\s\S]*?)```/i);
+	  const cleanOriginal = codeMatch ? codeMatch[1].trim() : rawResult;
+
+	  document.getElementById("original").value = cleanOriginal;
+
+	  // Set smart_action value to indicate a refinement
+	  document.getElementById("smart_action").value = action;
+
+	  // Submit the form
+	  form.submit();
+	}
 
     window.addEventListener("load", () => {
       applySavedTheme();
