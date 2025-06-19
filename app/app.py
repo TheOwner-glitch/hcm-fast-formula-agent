@@ -1,19 +1,33 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
 from datetime import datetime
 import json
+import time
+from werkzeug.security import check_password_hash
+from app.logging_config import setup_logger
+from app.admin import admin_bp
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
+# Setup logger
+logger = setup_logger()
 
-# Initialize OpenAI client using API key from .env
+app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "Vp*^:yR<DC>W_?|]m([;vwo<-yTF~n")
+app.register_blueprint(admin_bp, url_prefix="/admin")
+
+# Load users with hashed passwords from users.json
+USERS_PATH = os.path.join(os.path.dirname(__file__), "users.json")
+with open(USERS_PATH, "r") as f:
+    USERS = json.load(f)
+
+# OpenAI Client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Prompt templates for the four actions
+# Prompt templates
 PROMPT_TEMPLATES = {
     "generate": (
         "You are an Oracle HCM Fast Formula expert. "
@@ -49,22 +63,23 @@ PROMPT_TEMPLATES = {
     )
 }
 
-def log_interaction(action, prompt, response):
+def log_interaction(action, prompt, response, duration=None):
     log_entry = {
         "timestamp": datetime.utcnow().isoformat(),
         "action": action,
         "prompt": prompt,
-        "response": response
+        "response": response,
+        "duration": duration,
+        "user": session.get("username", "unknown")
     }
 
-    # Ensure logging path is inside the static folder regardless of working directory
     static_dir = os.path.join(os.path.dirname(__file__), "static")
     os.makedirs(static_dir, exist_ok=True)
-
     log_path = os.path.join(static_dir, "history.jsonl")
+
     if os.path.exists(log_path):
         with open(log_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()[-9:]  # keep last 9 entries to make room for new
+            lines = f.readlines()[-9:]
     else:
         lines = []
 
@@ -72,8 +87,34 @@ def log_interaction(action, prompt, response):
     with open(log_path, "w", encoding="utf-8") as f:
         f.writelines(lines)
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        hashed_password = USERS.get(username)
+
+        if hashed_password and check_password_hash(hashed_password, password):
+            session["authenticated"] = True
+            session["username"] = username
+            return redirect(url_for("index"))
+        else:
+            return render_template("login.html", error="Invalid credentials")
+
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.pop("authenticated", None)
+    session.pop("username", None)
+    return redirect(url_for("login"))
+
 @app.route("/", methods=["GET", "POST"])
 def index():
+    if not session.get("authenticated"):
+        return redirect(url_for("login"))
+
     result = None
     logic = ""
     inputs = ""
@@ -81,17 +122,22 @@ def index():
     action = ""
 
     if request.method == "POST":
+        client_ip = request.remote_addr
+        user_agent = request.headers.get("User-Agent", "Unknown")
         action = request.form["action"]
         model = request.form.get("model", "gpt-4")
         logic = request.form.get("logic", "")
         inputs = request.form.get("inputs", "")
         original = request.form.get("original", "")
 
-        # Build the prompt using the selected action
+        logger.info(f"[{client_ip}] UserAgent: {user_agent}")
+        logger.info(f"[{client_ip}] Request: action={action}, model={model}, user={session.get('username')}")
+
         prompt = PROMPT_TEMPLATES[action].format(logic=logic, inputs=inputs, original=original)
 
         try:
-            # Call OpenAI API
+            start_time = time.perf_counter()
+
             response = client.chat.completions.create(
                 model=model,
                 messages=[
@@ -101,12 +147,18 @@ def index():
                 temperature=0.2,
                 max_tokens=1500
             )
+
+            end_time = time.perf_counter()
+            duration = round(end_time - start_time, 2)
+
             result = response.choices[0].message.content
+            logger.info(f"[{client_ip}] OpenAI success – Action: {action}, Time: {duration}s")
         except Exception as e:
             result = f"An error occurred while contacting OpenAI: {str(e)}"
+            logger.error(f"[{client_ip}] OpenAI error: {str(e)}")
+            duration = None
 
-        # Log the interaction
-        log_interaction(action, prompt, result)
+        log_interaction(action, prompt, result, duration)
 
     return render_template("index.html", result=result, logic=logic, inputs=inputs, original=original, action=action)
 

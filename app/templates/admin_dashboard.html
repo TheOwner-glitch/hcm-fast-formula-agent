@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard – Fast Formula Agent</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 20px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f5f5f5;
+    }
+
+    .form-section {
+      margin-top: 30px;
+    }
+
+    .logout-link {
+      float: right;
+      text-decoration: none;
+      background: #e74c3c;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 5px;
+    }
+
+    .logout-link:hover {
+      background: #c0392b;
+    }
+
+    .submit-btn {
+      padding: 6px 14px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .submit-btn:hover {
+      background-color: #0056b3;
+    }
+
+    .danger-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .danger-btn:hover {
+      background: #b52a37;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+  <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+
+  <h2>🔐 Current Users</h2>
+  <table>
+    <thead>
+      <tr><th>Username</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+        <tr>
+          <td>{{ user }}</td>
+          <td>
+            {% if user != 'admin' %}
+              <form method="POST" action="{{ url_for('admin.delete_user') }}" style="display:inline;">
+                <input type="hidden" name="username" value="{{ user }}">
+                <button type="submit" class="danger-btn">Delete</button>
+              </form>
+            {% else %}
+              <em>Protected</em>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="form-section">
+    <h2>📊 Usage Metrics</h2>
+    <table>
+      <tr><th>Total Interactions</th><td>{{ metrics.total_interactions }}</td></tr>
+      <tr><th>Average Response Duration (s)</th><td>{{ metrics.average_duration }}</td></tr>
+      <tr><th>Total Errors</th><td>{{ metrics.error_count }}</td></tr>
+      <tr><th>Last Interaction</th><td>{{ metrics.last_interaction }}</td></tr>
+    </table>
+
+    <h3>Interactions by Action</h3>
+    <ul>
+      {% for action, count in metrics.action_counts.items() %}
+        <li><strong>{{ action }}</strong>: {{ count }}</li>
+      {% endfor %}
+    </ul>
+
+    <h3>Usage by User</h3>
+    <ul>
+      {% for user, count in metrics.user_usage.items() %}
+        <li><strong>{{ user }}</strong>: {{ count }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="form-section">
+    <h2>➕ Add New User</h2>
+    <form method="POST" action="{{ url_for('admin.add_user') }}">
+      <label>Username:</label><br>
+      <input type="text" name="username" required><br><br>
+
+      <label>Password:</label><br>
+      <input type="password" name="password" required><br><br>
+
+      <button type="submit" class="submit-btn">Add User</button>
+    </form>
+  </div>
+
+  <div class="form-section">
+    <h2>📜 Recent Activity Log</h2>
+    <ul>
+      {% for entry in logs %}
+        <li><strong>{{ entry.timestamp }}</strong> – {{ entry.action }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+</html>

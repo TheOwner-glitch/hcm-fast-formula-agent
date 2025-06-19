@@ -106,6 +106,12 @@
 </head>
 <body>
   <button class="mode-toggle" onclick="toggleMode()">Toggle Theme</button>
+  
+  <div style="position: absolute; top: 15px; left: 20px; font-size: 14px;">
+  Logged in as <strong>{{ session.username }}</strong> |
+  <a href="{{ url_for('logout') }}" style="color: #c00;">Logout</a>
+  </div>
+
   <h1>Oracle HCM Fast Formula Agent</h1>
 
   <form method="POST" enctype="multipart/form-data">
