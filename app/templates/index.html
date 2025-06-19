@@ -117,6 +117,66 @@
       display: inline-block;
     }
 	
+	.maximize-btn {
+	  float: right;
+	  font-size: 0.75em;
+	  margin-top: 8px;
+	  margin-bottom: 4px;
+	  padding: 3px 6px;
+	}
+
+	.fullscreen-editor {
+	position: fixed !important;
+	top: 0 !important;
+	left: 0 !important;
+	width: 100vw !important;
+	height: 100vh !important;
+	z-index: 9999 !important;
+	background: white;
+	}
+
+    .fullscreen-editor .ace_editor {
+    height: 100% !important;
+    }
+	
+	.fullscreen-editor {
+	  position: fixed !important;
+	  top: 0 !important;
+	  left: 0 !important;
+	  width: 100vw !important;
+	  height: 100vh !important;
+	  z-index: 9998 !important;
+	  background: white;
+	}
+
+	.fullscreen-editor-wrapper {
+	  position: fixed !important;
+	  top: 0;
+	  left: 0;
+	  width: 100vw;
+	  height: 100vh;
+	  z-index: 9999;
+	  background: white;
+	}
+
+	.restore-btn {
+	  position: absolute;
+	  top: 40px;
+	  right: 20px;
+	  z-index: 10000;
+	  font-size: 12px;
+	  padding: 6px 10px;
+	  background: #007bff;
+	  color: white;
+	  border: none;
+	  border-radius: 4px;
+	  cursor: pointer;
+	}
+
+	.restore-btn:hover {
+	  background: #0056b3;
+	}
+
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
 </head>
@@ -150,7 +210,11 @@
 
     <label>Formula Logic / Change Request:</label>
     <button type="button" class="preset-btn" onclick="loadPreset('generate')">Load Sample</button><br>
-    <div id="logicEditor" class="editor"></div>
+    <div id="logicWrapper" style="position: relative;">
+	  <div id="logicEditor" class="editor"></div>
+	  <button type="button" class="maximize-btn" onclick="toggleFullscreen('logicEditor', this)">🗖 Maximize</button>
+	</div>
+	
     <textarea name="logic" id="logic" style="display:none;">{{ logic or '' }}</textarea><br><br>
 
     <label>Inputs (comma-separated):</label><br>
@@ -163,7 +227,11 @@
     <button type="button" class="preset-btn" onclick="loadPreset('modify')">Modify Sample</button>
     <button type="button" class="preset-btn" onclick="loadPreset('explain')">Explain Sample</button>
     <button type="button" class="preset-btn" onclick="loadPreset('validate')">Validate Sample</button><br>
-    <div id="originalEditor" class="editor"></div>
+		<div id="originalWrapper" style="position: relative;">
+	  <div id="originalEditor" class="editor"></div>
+	  <button type="button" class="maximize-btn" onclick="toggleFullscreen('originalEditor', this)">🗖 Maximize</button>
+	</div>
+
     <textarea name="original" id="original" style="display:none;">{{ original or '' }}</textarea><br><br>
 
      <details>
@@ -388,6 +456,25 @@ RETURN finalAccrual`;
         localStorage.setItem("theme", "dark");
       }
     }
+	
+	function toggleFullscreen(editorId, button) {
+	  const editorDiv = document.getElementById(editorId);
+	  const wrapper = editorDiv.parentElement;
+
+	  editorDiv.classList.toggle("fullscreen-editor");
+
+	  if (editorDiv.classList.contains("fullscreen-editor")) {
+		wrapper.classList.add("fullscreen-editor-wrapper");
+		button.textContent = "🗗 Restore";
+		button.classList.add("restore-btn");
+	  } else {
+		wrapper.classList.remove("fullscreen-editor-wrapper");
+		button.textContent = "🗖 Maximize";
+		button.classList.remove("restore-btn");
+	  }
+
+	  ace.edit(editorId).resize();
+	}
 
     function applySavedTheme() {
       const saved = localStorage.getItem("theme") || "light";
@@ -398,6 +485,27 @@ RETURN finalAccrual`;
       applySavedTheme();
       loadHistory();
     });
+	
+	document.addEventListener("keydown", function (event) {
+	  if (event.key === "Escape") {
+		const fullscreenEditors = document.querySelectorAll(".fullscreen-editor");
+		fullscreenEditors.forEach((editorDiv) => {
+		  editorDiv.classList.remove("fullscreen-editor");
+		  const wrapper = editorDiv.parentElement;
+		  wrapper.classList.remove("fullscreen-editor-wrapper");
+
+		  const button = wrapper.querySelector("button.maximize-btn");
+		  if (button) {
+			button.textContent = "🗖 Maximize";
+			button.classList.remove("restore-btn");
+		  }
+
+		  const editorInstance = ace.edit(editorDiv.id);
+		  if (editorInstance) editorInstance.resize();
+		});
+	  }
+	});
+
   </script>
 </body>
 </html>
