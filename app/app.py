@@ -120,6 +120,9 @@ def index():
     inputs = ""
     original = ""
     action = ""
+    tone = ""
+    audience = ""
+    style = ""
 
     if request.method == "POST":
         client_ip = request.remote_addr
@@ -129,11 +132,17 @@ def index():
         logic = request.form.get("logic", "")
         inputs = request.form.get("inputs", "")
         original = request.form.get("original", "")
+        tone = request.form.get("tone", "").strip() or "Professional"
+        audience = request.form.get("audience", "").strip() or "HR Analyst"
+        style = request.form.get("style", "").strip() or "Plain English"
 
         logger.info(f"[{client_ip}] UserAgent: {user_agent}")
         logger.info(f"[{client_ip}] Request: action={action}, model={model}, user={session.get('username')}")
 
-        prompt = PROMPT_TEMPLATES[action].format(logic=logic, inputs=inputs, original=original)
+        customized_prompt = f"Tone: {tone}\nAudience: {audience}\nStyle: {style}\n\n" + PROMPT_TEMPLATES[action].format(
+            logic=logic, inputs=inputs, original=original
+        )
+        prompt = customized_prompt
 
         try:
             start_time = time.perf_counter()
@@ -160,7 +169,17 @@ def index():
 
         log_interaction(action, prompt, result, duration)
 
-    return render_template("index.html", result=result, logic=logic, inputs=inputs, original=original, action=action)
+    return render_template(
+        "index.html",
+        result=result,
+        logic=logic,
+        inputs=inputs,
+        original=original,
+        action=action,
+        tone=tone,
+        audience=audience,
+        style=style
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

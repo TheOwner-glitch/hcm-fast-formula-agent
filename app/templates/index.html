@@ -8,6 +8,7 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       transition: background-color 0.4s, color 0.4s;
       padding: 20px;
+	  line-height: 1.4;
     }
 
     body.light-mode {
@@ -61,8 +62,8 @@
     }
 
     .result-container {
-      margin-top: 30px;
-      padding: 10px;
+      margin-top: 12px;
+      padding: 8px;
       border: 1px solid #ccc;
       background-color: #f9f9f9;
       white-space: pre-wrap;
@@ -81,7 +82,7 @@
     .history-entry {
       margin-bottom: 15px;
       border-bottom: 1px solid #ddd;
-      padding-bottom: 10px;
+      padding-bottom: 8px;
     }
 
     .history-entry summary {
@@ -97,10 +98,25 @@
     }
 
     .editor {
-      height: 200px;
+      height: 250px;
       border: 1px solid #ccc;
-      margin-top: 5px;
+      margin-top: 10px;
+	  margin-bottom: 0px;
     }
+	
+	input[type="text"],
+    input[type="file"],
+    select,
+    textarea {
+      margin-bottom: 2px;
+      margin-top: 2px;
+    }
+
+    form label {
+      margin-top: 5px;
+      display: inline-block;
+    }
+	
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
 </head>
@@ -149,6 +165,35 @@
     <button type="button" class="preset-btn" onclick="loadPreset('validate')">Validate Sample</button><br>
     <div id="originalEditor" class="editor"></div>
     <textarea name="original" id="original" style="display:none;">{{ original or '' }}</textarea><br><br>
+
+     <details>
+      <summary><strong>🛠️ Prompt Customization</strong> (click to expand)</summary>
+      <fieldset style="margin-top: 10px; padding: 10px; border: 1px solid #ccc;">
+        <label for="tone"><strong>Response Tone:</strong></label><br>
+        <select name="tone" id="tone">
+          <option value=""></option>
+          <option value="expert">Expert</option>
+          <option value="friendly">Friendly</option>
+          <option value="simple">Simple</option>
+        </select><br><br>
+
+        <label for="audience"><strong>Audience Type:</strong></label><br>
+        <select name="audience" id="audience">
+          <option value=""></option>
+          <option value="HR Analyst">HR Analyst</option>
+          <option value="Developer">Developer</option>
+          <option value="Executive">Executive</option>
+        </select><br><br>
+
+        <label for="style"><strong>Formatting Style:</strong></label><br>
+        <select name="style" id="style">
+          <option value=""></option>
+          <option value="Plain Text">Plain Text</option>
+          <option value="Bullet Points">Bullet Points</option>
+          <option value="Code Comments">Code Comments</option>
+        </select>
+      </fieldset>
+    </details><br>
 
     <button type="submit">Submit</button>
     <span id="loadingSpinner" style="display:none; margin-left:10px;">⏳ Working...</span>
