@@ -200,6 +200,26 @@
       <option value="validate">⚠️ Validate – Check for errors and logic issues in a formula</option>
     </select>
     <br><br>
+	
+	<script>
+	  window.addEventListener("DOMContentLoaded", () => {
+		const commentaryCheckbox = document.querySelector('input[name="commentary_mode"]');
+		const actionSelector = document.getElementById("action");
+
+		function toggleCommentaryVisibility() {
+		  if (!commentaryCheckbox || !actionSelector) return;
+		  const label = commentaryCheckbox.closest("label");
+		  if (actionSelector.value === "generate") {
+			label.style.display = "block";
+		  } else {
+			label.style.display = "none";
+		  }
+		}
+
+		actionSelector.addEventListener("change", toggleCommentaryVisibility);
+		toggleCommentaryVisibility(); // Run it initially
+	  });
+	</script>
 
     <label for="model"><strong>Select Model:</strong></label><br>
     <select name="model" id="model">
@@ -244,7 +264,7 @@
           <option value="expert">Expert</option>
           <option value="friendly">Friendly</option>
           <option value="simple">Simple</option>
-        </select><br><br>
+        </select><br>
 
         <label for="audience"><strong>Audience Type:</strong></label><br>
         <select name="audience" id="audience">
@@ -263,6 +283,11 @@
         </select>
       </fieldset>
     </details><br>
+
+	<label>
+		<input type="checkbox" name="commentary_mode" {% if commentary_mode %}checked{% endif %}>
+		📘 Commentary Mode – Add explanations before each logic block
+	</label><br>
 
     <button type="submit">Submit</button>
     <span id="loadingSpinner" style="display:none; margin-left:10px;">⏳ Working...</span>
@@ -283,11 +308,11 @@
   <hr>
 
   <p><strong>Action Legend:</strong></p>
-  <ul>
-    <li><strong>Generate</strong>: Provide business rules and inputs → Get a new formula.</li>
-    <li><strong>Modify</strong>: Paste a formula + describe what to change.</li>
-    <li><strong>Explain</strong>: Paste a formula → Get plain-English explanation.</li>
-    <li><strong>Validate</strong>: Paste a formula → Get QA feedback + fixes.</li>
+  <ul style="list-style: none; padding-left: 0;">
+	  <li>✔️ <strong>Generate</strong>: Provide business rules and inputs → Get a new formula.</li>
+	  <li>✔️ <strong>Modify</strong>: Paste a formula + describe what to change.</li>
+	  <li>✔️ <strong>Explain</strong>: Paste a formula → Get plain-English explanation.</li>
+	  <li>✔️ <strong>Validate</strong>: Paste a formula → Get QA feedback + fixes.</li>
   </ul>
 
   <details>

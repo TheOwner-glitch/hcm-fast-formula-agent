@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, redirect, url_for, session
 from openai import OpenAI
 import os
@@ -139,15 +140,17 @@ def index():
     tone = ""
     audience = ""
     style = ""
+    commentary_mode = False
 
     if request.method == "POST":
         client_ip = request.remote_addr
         user_agent = request.headers.get("User-Agent", "Unknown")
-       # Support smart refinement actions
+
         action = request.form.get("smart_action") or request.form.get("action")
         if not action or action.strip() == "":
             return "Missing action", 400
         action = action.strip()
+
         model = request.form.get("model", "gpt-4")
         logic = request.form.get("logic", "")
         inputs = request.form.get("inputs", "")
@@ -155,19 +158,28 @@ def index():
         tone = request.form.get("tone", "").strip() or "Professional"
         audience = request.form.get("audience", "").strip() or "HR Analyst"
         style = request.form.get("style", "").strip() or "Plain English"
+        commentary_mode = request.form.get("commentary_mode") == "on"
 
         logger.info(f"[{client_ip}] UserAgent: {user_agent}")
         logger.info(f"[{client_ip}] Request: action={action}, model={model}, user={session.get('username')}")
 
-        if action in PROMPT_TEMPLATES:
-            prompt_template = PROMPT_TEMPLATES[action]
-            prompt = prompt_template.format(logic=logic, inputs=inputs, original=original)
-        else:
+        if action not in PROMPT_TEMPLATES:
             return "Invalid action", 400
 
-        customized_prompt = f"Tone: {tone}\nAudience: {audience}\nStyle: {style}\n\n{prompt}"
+        prompt_template = PROMPT_TEMPLATES[action]
 
-        prompt = customized_prompt
+        if action == "generate" and commentary_mode:
+            prompt_template = (
+                "You are an Oracle HCM Fast Formula expert. "
+                "Generate a fast formula based on the following description:\n"
+                "{logic}\n"
+                "Inputs: {inputs}\n"
+                "Before each logic block, add a plain-English comment explaining what the block does.\n"
+                "Return the formula with detailed comments for readability."
+            )
+
+        prompt = prompt_template.format(logic=logic, inputs=inputs, original=original)
+        customized_prompt = f"Tone: {tone}\nAudience: {audience}\nStyle: {style}\n\n{prompt}"
 
         try:
             start_time = time.perf_counter()
@@ -176,7 +188,7 @@ def index():
                 model=model,
                 messages=[
                     {"role": "system", "content": "You are an Oracle HCM expert."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": customized_prompt}
                 ],
                 temperature=0.2,
                 max_tokens=1500
@@ -192,7 +204,7 @@ def index():
             logger.error(f"[{client_ip}] OpenAI error: {str(e)}")
             duration = None
 
-        log_interaction(action, prompt, result, duration)
+        log_interaction(action, customized_prompt, result, duration)
 
     return render_template(
         "index.html",
@@ -203,7 +215,8 @@ def index():
         action=action,
         tone=tone,
         audience=audience,
-        style=style
+        style=style,
+        commentary_mode=commentary_mode
     )
 
 if __name__ == "__main__":
