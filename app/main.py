@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for, session
 from openai import OpenAI
 import os
@@ -9,6 +8,7 @@ import time
 from werkzeug.security import check_password_hash
 from app.logging_config import setup_logger
 from app.admin import admin_bp
+from app.plugins import PLUGINS  # ⬅️ NEW: Import plugin system
 
 # Load environment variables
 load_dotenv()
@@ -163,22 +163,28 @@ def index():
         logger.info(f"[{client_ip}] UserAgent: {user_agent}")
         logger.info(f"[{client_ip}] Request: action={action}, model={model}, user={session.get('username')}")
 
-        if action not in PROMPT_TEMPLATES:
+        # 🎯 Unified prompt building logic
+        if action in PROMPT_TEMPLATES:
+            prompt_template = PROMPT_TEMPLATES[action]
+
+            if action == "generate" and commentary_mode:
+                prompt_template = (
+                    "You are an Oracle HCM Fast Formula expert. "
+                    "Generate a fast formula based on the following description:\n"
+                    "{logic}\n"
+                    "Inputs: {inputs}\n"
+                    "Before each logic block, add a plain-English comment explaining what the block does.\n"
+                    "Return the formula with detailed comments for readability."
+                )
+
+            prompt = prompt_template.format(logic=logic, inputs=inputs, original=original)
+        elif action in PLUGINS:
+            # Call plugin's prompt builder
+            prompt = PLUGINS[action](logic=logic, inputs=inputs, original=original)
+        else:
             return "Invalid action", 400
 
-        prompt_template = PROMPT_TEMPLATES[action]
-
-        if action == "generate" and commentary_mode:
-            prompt_template = (
-                "You are an Oracle HCM Fast Formula expert. "
-                "Generate a fast formula based on the following description:\n"
-                "{logic}\n"
-                "Inputs: {inputs}\n"
-                "Before each logic block, add a plain-English comment explaining what the block does.\n"
-                "Return the formula with detailed comments for readability."
-            )
-
-        prompt = prompt_template.format(logic=logic, inputs=inputs, original=original)
+        # ✨ Add tone, audience, and style to system prompt
         customized_prompt = f"Tone: {tone}\nAudience: {audience}\nStyle: {style}\n\n{prompt}"
 
         try:

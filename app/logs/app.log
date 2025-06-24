@@ -211,3 +211,12 @@
 2025-06-19 22:36:00 | INFO | [127.0.0.1] UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
 2025-06-19 22:36:00 | INFO | [127.0.0.1] Request: action=generate, model=gpt-3.5-turbo, user=julio
 2025-06-19 22:36:04 | INFO | [127.0.0.1] OpenAI success – Action: generate, Time: 3.27s
+2025-06-23 21:33:11 | INFO | [127.0.0.1] UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+2025-06-23 21:33:11 | INFO | [127.0.0.1] Request: action=generate, model=gpt-3.5-turbo, user=dev
+2025-06-23 21:33:14 | INFO | [127.0.0.1] OpenAI success – Action: generate, Time: 3.15s
+2025-06-23 21:33:28 | INFO | [127.0.0.1] UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+2025-06-23 21:33:28 | INFO | [127.0.0.1] Request: action=simplify, model=gpt-4, user=dev
+2025-06-23 21:33:37 | INFO | [127.0.0.1] OpenAI success – Action: simplify, Time: 9.59s
+2025-06-23 21:34:27 | INFO | [127.0.0.1] UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+2025-06-23 21:34:27 | INFO | [127.0.0.1] Request: action=explain, model=gpt-3.5-turbo, user=dev
+2025-06-23 21:34:31 | INFO | [127.0.0.1] OpenAI success – Action: explain, Time: 3.26s
